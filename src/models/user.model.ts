@@ -1,6 +1,17 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+
+interface IUser {
+  username: string;
+  email: string;
+  fullname: string;
+  avatar: string;
+  coverImage: string;
+  watchHistory: Types.ObjectId[];
+  password: string;
+  refreshToken: string;
+}
 
 const userSchema = new Schema(
   {
@@ -88,4 +99,4 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model<IUser>("User", userSchema);
