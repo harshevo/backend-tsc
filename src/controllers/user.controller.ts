@@ -46,10 +46,12 @@ const registerUser = asyncHandler(
       throw new ApiError(400, "avatar is required");
     }
 
+    console.log(avatar.secure_url);
+
     const user = await User.create({
       fullname,
-      avatar: avatar.url,
-      coverImage: coverImage?.url || "",
+      avatar: avatar.secure_url,
+      coverImage: coverImage?.secure_url || "",
       email,
       password,
       username: username.toLowerCase(),
