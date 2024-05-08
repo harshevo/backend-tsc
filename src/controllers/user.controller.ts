@@ -29,11 +29,24 @@ const registerUser = asyncHandler(
       req.files as { [fieldname: string]: Express.Multer.File[] }
     )?.avatar[0].path;
 
-    const coverImageLocalPath = (
-      req.files as { [fieldname: string]: Express.Multer.File[] }
-    )?.coverImage[0].path;
+    // const coverImageLocalPath = (
+    //   req.files as { [fieldname: string]: Express.Multer.File[] }
+    // )?.coverImage[0].path;
 
-    console.log("localpath", avatarLocalPath);
+    let coverImageLocalPath;
+    if (
+      req.files &&
+      Array.isArray(
+        (req.files as { [fieldname: string]: Express.Multer.File[] })
+          .coverImage,
+      ) &&
+      (req.files as { [fieldname: string]: Express.Multer.File[] }).coverImage
+        .length > 0
+    ) {
+      coverImageLocalPath = (
+        req.files as { [fieldname: string]: Express.Multer.File[] }
+      )?.coverImage[0].path;
+    }
 
     if (!avatarLocalPath) {
       throw new ApiError(400, "Avatar File is Required");
