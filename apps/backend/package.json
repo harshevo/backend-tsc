@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js",
     "dev": "nodemon",
-    "start": "tsc -b && node dist/index.js"
+    "start": "npx tsc -b && node dist/index.js"
   },
   "keywords": [],
   "author": "",
