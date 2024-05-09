@@ -20,6 +20,10 @@ app.use(cookieParser());
 import userRoute from "./routes/user.routes";
 
 //routes use
+app.get("/", (req: express.Request, res: express.Response) => {
+  return res.status(200).json({ message: "Health Good" });
+});
+
 app.use("/api/v1/users", userRoute);
 
 export default app;
