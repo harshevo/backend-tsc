@@ -1,7 +1,10 @@
 import dotenv from "dotenv";
+import path from "path";
 import app from "./app";
 
-dotenv.config();
+dotenv.config({
+  path: path.resolve("../../.env"),
+});
 
 import connectDb from "./db/connection";
 
