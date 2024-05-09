@@ -2,7 +2,7 @@ import mongoose, { Schema, Types } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-interface IUser {
+export interface IUser {
   username: string;
   email: string;
   fullname: string;
@@ -10,7 +10,10 @@ interface IUser {
   coverImage: string;
   watchHistory: Types.ObjectId[];
   password: string;
-  refreshToken: string;
+  refreshToken: string | undefined;
+  generateAccessToken: () => string;
+  generateRefreshToken: () => string;
+  isPasswordCorrect: (password: string) => boolean;
 }
 
 const userSchema = new Schema(
@@ -72,7 +75,7 @@ userSchema.methods.isPasswordCorrect = async function (password: string) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessToken = function () {
+userSchema.methods.generateAccessToken = function (): string {
   return jwt.sign(
     {
       _id: this._id,
@@ -87,7 +90,7 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
-userSchema.methods.generateAccessToken = function () {
+userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,

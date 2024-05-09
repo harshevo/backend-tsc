@@ -1,7 +1,10 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import path from "path";
 
-require("dotenv").config();
+require("dotenv").config({
+  path: path.resolve("../../.env"),
+});
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
