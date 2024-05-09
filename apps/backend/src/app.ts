@@ -21,7 +21,7 @@ import userRoute from "./routes/user.routes";
 
 //routes use
 app.get("/", (req: express.Request, res: express.Response) => {
-  return res.status(200).json({ message: "Health Good" });
+  return res.status(200).json({ message: "Running" });
 });
 
 app.use("/api/v1/users", userRoute);
