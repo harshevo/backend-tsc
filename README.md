@@ -2,6 +2,14 @@
 
 ## To run the Project
 
+- Install the dependencies
+- `Backend`:
+
+```sh
+cd apps/backend
+npm i
+```
+
 Run the following command:
 
 ```sh
