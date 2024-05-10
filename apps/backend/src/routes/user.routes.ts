@@ -6,6 +6,7 @@ import {
   logoutUser,
   registerUser,
   refreshAccessToken,
+  resetPassword,
 } from "../controllers/user.controller";
 import { verifyJwt } from "../middlewares/auth.middleware";
 
@@ -25,5 +26,6 @@ router.post("/login", loginUser);
 //secured routes
 router.get("/logout", verifyJwt, logoutUser);
 router.get("/refresh-session", refreshAccessToken);
+router.post("/reset-password", verifyJwt, resetPassword);
 
 export default router;

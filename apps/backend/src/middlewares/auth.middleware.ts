@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import { Express, NextFunction, Request, Response } from "express";
 
 export interface IDecodedToken {
+  //can be named custom User Interface
   _id: mongoose.Types.ObjectId;
 }
 

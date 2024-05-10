@@ -1,4 +1,4 @@
-import express, { application } from "express";
+import express from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { IUser, User } from "../models/user.model";
@@ -118,8 +118,6 @@ const registerUser = asyncHandler(
 const loginUser = asyncHandler(async (req: express.Request, res: Response) => {
   const { email, username, password } = req.body;
 
-  debugger;
-
   if (!username || !email) {
     throw new ApiError(400, "username or password is required");
   }
@@ -132,7 +130,7 @@ const loginUser = asyncHandler(async (req: express.Request, res: Response) => {
     throw new ApiError(404, "user does not exist");
   }
 
-  const isPasswordCorrect = await user.isPasswordCorrect(password);
+  const isPasswordCorrect = await user.isPasswordCorrect(password as string);
 
   if (!isPasswordCorrect) {
     throw new ApiError(401, "password Incorrect");
@@ -226,4 +224,57 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const resetPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findById((req.user as IDecodedToken)?._id);
+
+  if (!user) {
+    throw new ApiError(401, "UnAuthorized");
+  }
+
+  const isPasswordCorrect = await user?.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, "Invalid Old Password");
+  }
+
+  user.password = newPassword;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res.status(200).json({ message: "Password Changed Successfully" });
+});
+
+const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
+  return res.status(200).json(req.user);
+});
+
+const updateUser = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { fullname } = req.body;
+
+    if (!fullname) {
+      throw new ApiError(400, "Enter Valid Fields");
+    }
+
+    await User.findByIdAndUpdate((req.user as IDecodedToken)?._id, {
+      $set: {
+        fullname,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "something went wrong while updating user");
+  }
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  resetPassword,
+  updateUser,
+  getCurrentUser,
+};
