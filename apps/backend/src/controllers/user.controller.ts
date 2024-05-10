@@ -1,4 +1,4 @@
-import express from "express";
+import express, { application } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { IUser, User } from "../models/user.model";
@@ -7,6 +7,18 @@ import { ApiResponse } from "../utils/ApiResponse";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import { IRequestWithUser } from "../middlewares/auth.middleware";
+import jwt from "jsonwebtoken";
+import path from "path";
+import { IDecodedToken } from "../middlewares/auth.middleware";
+
+require("dotenv").config({
+  path: path.resolve("../../.env"),
+});
+
+const options = {
+  httpOnly: true,
+  secure: true,
+};
 
 const generateAccessAndRefreshTokens = async (
   userId: mongoose.Types.ObjectId,
@@ -134,11 +146,6 @@ const loginUser = asyncHandler(async (req: express.Request, res: Response) => {
     "-password -refreshToken",
   );
 
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
-
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
@@ -170,11 +177,6 @@ const logoutUser = asyncHandler(async (req: Request, res: express.Response) => {
       },
     );
 
-    const options = {
-      httpOnly: true,
-      secure: true,
-    };
-
     return res
       .status(200)
       .clearCookie("accessToken", options)
@@ -186,4 +188,42 @@ const logoutUser = asyncHandler(async (req: Request, res: express.Response) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser };
+const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const incomingToken = req.body.refreshToken || req.cookies.refreshToken;
+
+    if (!incomingToken) {
+      throw new ApiError(400, "UnAuthorized Access");
+    }
+
+    const decodedToken = jwt.verify(
+      incomingToken,
+      process.env.REFRESH_TOKEN_SECRET as string,
+    );
+
+    const user = await User.findById((decodedToken as IDecodedToken)._id);
+
+    if (!user) {
+      throw new ApiError(401, "Invalid AccessToken");
+    }
+
+    if (incomingToken !== user?.refreshToken) {
+      throw new ApiError(401, "Invalid or Expired Token");
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+      user?._id,
+    );
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json({ message: "success" });
+  } catch (error) {
+    console.log("refreshAccessToken", error);
+    throw new ApiError(500, "Error in Refreshing Access Token");
+  }
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken };
