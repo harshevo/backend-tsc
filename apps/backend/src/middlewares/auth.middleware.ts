@@ -5,8 +5,13 @@ import { User, IUser } from "../models/user.model";
 import mongoose from "mongoose";
 import { Express, NextFunction, Request, Response } from "express";
 
-interface IDecodedToken {
+export interface IDecodedToken {
   _id: mongoose.Types.ObjectId;
+}
+
+export interface IRequestWithUser extends Request {
+  user?: string;
+  _id?: mongoose.Types.ObjectId;
 }
 
 export const verifyJwt = asyncHandler(
@@ -33,13 +38,13 @@ export const verifyJwt = asyncHandler(
         throw new ApiError(401, "Invalid Access Token");
       }
 
-      (req as any).user = user;
+      req.user = user;
 
       next();
     } catch (error) {
       console.log("auth.middleware.ts", error);
       throw new ApiError(401, "Invalid Access Token");
+      next();
     }
-    next();
   },
 );

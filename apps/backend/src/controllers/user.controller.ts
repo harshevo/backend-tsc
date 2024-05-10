@@ -6,6 +6,7 @@ import { uploadToCloudinary } from "../utils/cloudinary";
 import { ApiResponse } from "../utils/ApiResponse";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
+import { IRequestWithUser } from "../middlewares/auth.middleware";
 
 const generateAccessAndRefreshTokens = async (
   userId: mongoose.Types.ObjectId,
@@ -83,8 +84,6 @@ const registerUser = asyncHandler(
       throw new ApiError(400, "avatar is required");
     }
 
-    console.log(avatar.secure_url);
-
     const user = await User.create({
       fullname,
       avatar: avatar.secure_url,
@@ -106,8 +105,6 @@ const registerUser = asyncHandler(
 
 const loginUser = asyncHandler(async (req: express.Request, res: Response) => {
   const { email, username, password } = req.body;
-
-  console.log("username: %s password: %s", username, password);
 
   debugger;
 
@@ -159,29 +156,34 @@ const loginUser = asyncHandler(async (req: express.Request, res: Response) => {
     );
 });
 
-const logoutUser = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(
-    (req as any).user._id,
-    {
-      $set: {
-        refreshToken: undefined,
+const logoutUser = asyncHandler(async (req: Request, res: express.Response) => {
+  try {
+    await User.findByIdAndUpdate(
+      (req.user as any)._id,
+      {
+        $set: {
+          refreshToken: undefined,
+        },
       },
-    },
-    {
-      new: true,
-    },
-  );
+      {
+        new: true,
+      },
+    );
 
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
 
-  return res
-    .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refrehToken", options)
-    .json({ message: "User Logged Out" });
+    return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json({ message: "success" });
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "Error during Logout");
+  }
 });
 
 export { registerUser, loginUser, logoutUser };
