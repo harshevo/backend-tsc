@@ -164,7 +164,7 @@ const loginUser = asyncHandler(async (req: express.Request, res: Response) => {
 const logoutUser = asyncHandler(async (req: Request, res: express.Response) => {
   try {
     await User.findByIdAndUpdate(
-      (req.user as any)._id,
+      (req.user as IDecodedToken)._id,
       {
         $set: {
           refreshToken: undefined,
