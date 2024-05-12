@@ -1,20 +1,22 @@
 import express from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
-import { IUser, User } from "../models/user.model";
+import { /*IUser,*/ User } from "../models/user.model";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import { ApiResponse } from "../utils/ApiResponse";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
-import { IRequestWithUser } from "../middlewares/auth.middleware";
+// import { IRequestWithUser } from "../middlewares/auth.middleware";
 import jwt from "jsonwebtoken";
 import path from "path";
 import { IDecodedToken } from "../middlewares/auth.middleware";
 
+//imported here coz env file was not detected here
 require("dotenv").config({
   path: path.resolve("../../.env"),
 });
 
+//options for sending secured cookie
 const options = {
   httpOnly: true,
   secure: true,
@@ -54,6 +56,7 @@ const registerUser = asyncHandler(
       throw new ApiError(400, "All Fields are required");
     }
 
+    //finding user by username or email
     const existedUser = await User.findOne({
       $or: [{ username }, { email }],
     });
@@ -62,9 +65,9 @@ const registerUser = asyncHandler(
       throw new ApiError(409, "User Already Exists");
     }
 
-    const avatarLocalPath = (
-      req.files as { [fieldname: string]: Express.Multer.File[] }
-    )?.avatar[0].path;
+    const avatarLocalPath = //typedef as below
+      (req.files as { [fieldname: string]: Express.Multer.File[] })?.avatar[0]
+        .path;
 
     // const coverImageLocalPath = (
     //   req.files as { [fieldname: string]: Express.Multer.File[] }
@@ -164,6 +167,8 @@ const loginUser = asyncHandler(async (req: express.Request, res: Response) => {
 const logoutUser = asyncHandler(async (req: Request, res: express.Response) => {
   try {
     await User.findByIdAndUpdate(
+      //IDecodedToken is an interface with user in it,
+      //to support the user type in request
       (req.user as IDecodedToken)._id,
       {
         $set: {
@@ -188,6 +193,7 @@ const logoutUser = asyncHandler(async (req: Request, res: express.Response) => {
 
 const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   try {
+    //token may be in cookies or body
     const incomingToken = req.body.refreshToken || req.cookies.refreshToken;
 
     if (!incomingToken) {
@@ -233,7 +239,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     throw new ApiError(401, "UnAuthorized");
   }
 
-  const isPasswordCorrect = await user?.isPasswordCorrect(oldPassword);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCorrect) {
     throw new ApiError(401, "Invalid Old Password");
@@ -241,6 +247,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   user.password = newPassword;
 
+  //no need to validate the data before saving
   await user.save({ validateBeforeSave: false });
 
   return res.status(200).json({ message: "Password Changed Successfully" });
@@ -258,14 +265,82 @@ const updateUser = asyncHandler(async (req: Request, res: Response) => {
       throw new ApiError(400, "Enter Valid Fields");
     }
 
-    await User.findByIdAndUpdate((req.user as IDecodedToken)?._id, {
-      $set: {
-        fullname,
+    const user = await User.findByIdAndUpdate(
+      (req.user as IDecodedToken)?._id,
+      {
+        $set: {
+          fullname,
+        },
       },
-    });
+      { new: true },
+    ).select("-password");
+
+    return res.status(200).json(user);
   } catch (error) {
     console.log(error);
     throw new ApiError(500, "something went wrong while updating user");
+  }
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  try {
+    const avtarLocalPath = req.file?.path;
+
+    if (!avtarLocalPath) {
+      throw new ApiError(404, "avtar is required");
+    }
+
+    const avatar = await uploadToCloudinary(avtarLocalPath);
+
+    if (!avatar) {
+      throw new ApiError(404, "avatarurl not found: inside updateAvatar");
+    }
+
+    const user = await User.findByIdAndUpdate(
+      (req.user as IDecodedToken)?._id,
+      {
+        $set: {
+          avatar: avatar?.url,
+        },
+      },
+      { new: true },
+    ).select("-password");
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log("updateAvatarImage--> controller", error);
+    throw new ApiError(500, "Error while updating the userAvatar");
+  }
+});
+
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  try {
+    const coverImagePath = req.file?.path;
+
+    if (!coverImagePath) {
+      throw new ApiError(404, "coverImage is required");
+    }
+
+    const coverImageUrl = await uploadToCloudinary(coverImagePath);
+
+    if (!coverImageUrl) {
+      throw new ApiError(404, "coverImageUrl not found: inside updateAvatar");
+    }
+
+    const user = await User.findByIdAndUpdate(
+      (req.user as IDecodedToken)?._id,
+      {
+        $set: {
+          coverImage: coverImageUrl?.url,
+        },
+      },
+      { new: true },
+    ).select("-password");
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log("updateCoverImage--> controller", error);
+    throw new ApiError(500, "Error while updating the user coverImage");
   }
 });
 
@@ -277,4 +352,6 @@ export {
   resetPassword,
   updateUser,
   getCurrentUser,
+  updateUserAvatar,
+  updateUserCoverImage,
 };

@@ -7,6 +7,10 @@ import {
   registerUser,
   refreshAccessToken,
   resetPassword,
+  updateUser,
+  getCurrentUser,
+  updateUserAvatar,
+  updateUserCoverImage,
 } from "../controllers/user.controller";
 import { verifyJwt } from "../middlewares/auth.middleware";
 
@@ -27,5 +31,18 @@ router.post("/login", loginUser);
 router.get("/logout", verifyJwt, logoutUser);
 router.get("/refresh-session", refreshAccessToken);
 router.post("/reset-password", verifyJwt, resetPassword);
-
+router.get("/getusers", verifyJwt, getCurrentUser);
+router.post("/updateuser", verifyJwt, updateUser);
+router.post(
+  "/update_avatar",
+  verifyJwt,
+  upload.single("avatar"),
+  updateUserAvatar,
+);
+router.post(
+  "/update_Cover_image",
+  verifyJwt,
+  upload.single("coverImage"),
+  updateUserCoverImage,
+);
 export default router;
